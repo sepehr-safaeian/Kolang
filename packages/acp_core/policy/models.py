@@ -15,15 +15,11 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from acp_core.common.types import PolicyId, PrincipalKind
-
-
-class PolicyEffect(StrEnum):
-    """The effect of a policy evaluation."""
-
-    ALLOW = "allow"
-    DENY = "deny"
-    CONDITIONAL = "conditional"  # Requires approval or additional verification
-
+from acp_core.contracts.models import (
+    PolicyDecision,
+    PolicyInput,
+    PolicyObligation,
+)
 
 class PolicyCondition(BaseModel):
     """A condition attached to a CONDITIONAL policy decision."""
@@ -34,16 +30,24 @@ class PolicyCondition(BaseModel):
         description="Condition parameters, e.g. {'approvers': ['admin']}",
     )
 
+__all__ = [
+    "PolicyCondition",
+    "PolicyDecision",
+    "PolicyEffect",
+    "PolicyEvaluationInput",
+    "PolicyInput",
+    "PolicyObligation",
+    "PolicyRule",
+]
 
-class PolicyDecision(BaseModel):
-    """The result of evaluating a policy."""
 
-    effect: PolicyEffect
-    policy_id: str | None = None
-    reason: str = ""
-    conditions: list[PolicyCondition] = Field(default_factory=list)
-    evaluated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    evaluation_duration_ms: float = 0.0
+class PolicyEffect(StrEnum):
+    """The effect of a policy evaluation."""
+
+    ALLOW = "allow"
+    DENY = "deny"
+    REQUIRE_APPROVAL = "require_approval"
+    CONDITIONAL = "conditional"  # Requires approval or additional verification
 
 
 class PolicyRule(BaseModel):

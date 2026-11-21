@@ -10,21 +10,7 @@ from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
-from acp_core.common.types import PrincipalId, PrincipalKind
-
-
-class Principal(BaseModel):
-    """A verified identity making a request (user, service, or agent)."""
-
-    id: PrincipalId
-    kind: PrincipalKind
-    name: str
-    email: str | None = None
-    roles: list[str] = Field(default_factory=list)
-    groups: list[str] = Field(default_factory=list)
-    metadata: dict[str, str] = Field(default_factory=dict)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+from acp_core.contracts.models import Principal
 
 
 class TokenClaims(BaseModel):

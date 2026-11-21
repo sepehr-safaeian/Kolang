@@ -229,6 +229,7 @@ Every domain is evaluated according to the standard five status classifications:
 
 | Domain / Capability | Status | Implementation Details & Current State |
 |---|---|---|
+| **Gateway & Decision Contracts** | `Implemented & Tested` | Canonical internal domain contracts (`Principal`, `RequestContext`, `ToolResource`, `ToolInvocation`, `PolicyInput`, `PolicyDecision`, `GatewayResult`) in `acp_core.contracts` with mandatory tenant scoping, secret leakage guards, and full test suite. |
 | **Internal Protocol Models** | `Implemented & Tested` | `ToolCallRequest`, `ToolCallResponse`, `ToolDescriptor`, and `ServerDescriptor` in `acp_core.protocol.models` with comprehensive tests in `test_domain_models.py`. |
 | **Request Context & Middleware** | `Implemented & Tested` | `RequestContextMiddleware` generates/extracts `X-Request-ID` and `X-Correlation-ID`, binds them to `structlog.contextvars`, and writes them to response headers. Tested in `test_health.py` and `test_common.py`. |
 | **Error Hierarchy** | `Implemented & Tested` | `KolangError` hierarchy with machine-readable codes and HTTP status mappings in `acp_core.common.errors`. Tested in `test_common.py`. |
@@ -258,8 +259,8 @@ Mapping against the 69 tasks specified in `agent-control-plane-mvp-backlog.md`:
 
 ### Group A: Architecture Baseline & Contracts (ACP-001 to ACP-005)
 * **ACP-001 (Audit Repository):** `Implemented & Tested` — Fulfilled by this audit document and verification report.
-* **ACP-002 (Pin MCP SDK & Protocol Version):** `Partially Implemented` — `mcp==2.3.0` pinned in dependencies; formal ADR and compatibility verification in progress.
-* **ACP-003 (Internal Gateway & Decision Contracts):** `Partially Implemented` — Domain schemas exist in `protocol/models.py` and `gateway/interfaces.py`, needing contract hardening.
+* **ACP-002 (Pin MCP SDK & Protocol Version):** `Implemented & Tested` — `mcp==2.3.0` pinned in dependencies; formal ADR-001 and compatibility verification tests verified.
+* **ACP-003 (Internal Gateway & Decision Contracts):** `Implemented & Tested` — Canonical internal domain contracts defined in `acp_core.contracts` and re-exported in `acp_core.gateway`. Comprehensive unit tests verify strict ID and timestamp validation, mandatory workspace scoping, 3 canonical decision outcomes (allow, deny, require_approval), and backend enforcement preventing raw secrets.
 * **ACP-004 (Configuration & Environment):** `Implemented & Tested` — `Settings` class and `.env.example` verified.
 * **ACP-005 (Structured Logging & Request Correlation):** `Implemented & Tested` — `structlog` and `RequestContextMiddleware` verified with automated tests.
 

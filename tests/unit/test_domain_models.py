@@ -14,6 +14,7 @@ from acp_core.common.types import (
     PrincipalKind,
     RequestId,
     ServerId,
+    WorkspaceId,
 )
 from acp_core.identity.models import AuthContext, Principal, TokenClaims
 from acp_core.protocol.models import (
@@ -71,10 +72,12 @@ def test_identity_models() -> None:
     principal = Principal(
         id=PrincipalId("usr-alice"),
         kind=PrincipalKind.USER,
+        workspace_id=WorkspaceId("ws-default"),
         name="Alice",
         roles=["developer", "admin"],
     )
     assert principal.name == "Alice"
+    assert principal.workspace_id == "ws-default"
     assert "admin" in principal.roles
 
     claims = TokenClaims(

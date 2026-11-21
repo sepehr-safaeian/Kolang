@@ -13,6 +13,8 @@ from typing import Any, NewType
 
 # ── Identifier Types ─────────────────────────────────────────────────────────
 
+WorkspaceId = NewType("WorkspaceId", str)
+ClientId = NewType("ClientId", str)
 PrincipalId = NewType("PrincipalId", str)
 ToolId = NewType("ToolId", str)
 ServerId = NewType("ServerId", str)
@@ -44,3 +46,12 @@ class ToolCallResult(StrEnum):
     DENIED = "denied"
     PENDING_APPROVAL = "pending_approval"
     ERROR = "error"
+
+
+class DecisionEffect(StrEnum):
+    """Standardized policy evaluation decision outcomes."""
+
+    ALLOW = "allow"
+    DENY = "deny"
+    REQUIRE_APPROVAL = "require_approval"
+    CONDITIONAL = "conditional"
