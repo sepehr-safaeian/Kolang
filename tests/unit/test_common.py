@@ -1,20 +1,15 @@
 from __future__ import annotations
 
-import pytest
 from acp_core.common.context import (
     RequestContext,
     get_request_context,
     get_request_context_or_none,
     request_context_scope,
-    set_request_context,
 )
 from acp_core.common.errors import (
     AuthenticationError,
-    AuthorizationError,
     ErrorResponse,
     KolangError,
-    NotFoundError,
-    ValidationError,
 )
 from acp_core.common.types import PrincipalKind, ToolCallResult
 

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from apps.api.app.main import create_app
 from acp_core.common.context import RequestContext, set_request_context
+from apps.api.app.main import create_app
 
 
 @pytest.fixture

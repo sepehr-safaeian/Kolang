@@ -48,7 +48,7 @@ def setup_structlog(log_level: str = "info") -> None:
 
 def setup_telemetry(settings: Settings) -> trace.Tracer:
     """Initialize OpenTelemetry tracing and structured logging."""
-    global _tracer  # noqa: PLW0603
+    global _tracer
 
     # ── Structured logging ───────────────────────────────────────────────
     setup_structlog(settings.app_log_level)

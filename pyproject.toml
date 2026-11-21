@@ -78,10 +78,14 @@ select = [
     "PT",             # flake8-pytest-style
     "SIM",            # flake8-simplify
     "TID",            # flake8-tidy-imports
-    "TCH",            # flake8-type-checking
     "RUF",            # ruff-specific
 ]
 ignore = ["S101", "B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"examples/*" = ["T201"]
+"scripts/*" = ["T201"]
+"tests/*" = ["S101", "T201"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["acp_core"]
@@ -90,6 +94,7 @@ known-first-party = ["acp_core"]
 [tool.mypy]
 python_version = "3.11"
 strict = true
+ignore_missing_imports = true
 plugins = ["pydantic.mypy"]
 exclude = ["migrations/", "tests/"]
 
@@ -111,3 +116,7 @@ show_missing = true
 # ── bandit ────────────────────────────────────────────────────────────────────
 [tool.bandit]
 exclude_dirs = ["tests"]
+
+# ── hatch build ───────────────────────────────────────────────────────────────
+[tool.hatch.build.targets.wheel]
+packages = ["packages/acp_core", "apps"]

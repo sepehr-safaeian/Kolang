@@ -42,9 +42,7 @@ class UpstreamConnector(Protocol):
 class PolicyEnforcer(Protocol):
     """Evaluates access control policies for tool call requests."""
 
-    async def evaluate(
-        self, request: ToolCallRequest, principal: Principal
-    ) -> PolicyDecision: ...
+    async def evaluate(self, request: ToolCallRequest, principal: Principal) -> PolicyDecision: ...
 
 
 class ApprovalManager(Protocol):

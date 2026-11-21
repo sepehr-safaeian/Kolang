@@ -8,11 +8,11 @@ anywhere in the call stack via contextvars.
 from __future__ import annotations
 
 import uuid
+from collections.abc import Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Generator
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,9 +28,7 @@ class RequestContext:
             object.__setattr__(self, "correlation_id", self.request_id)
 
 
-_request_context: ContextVar[RequestContext | None] = ContextVar(
-    "request_context", default=None
-)
+_request_context: ContextVar[RequestContext | None] = ContextVar("request_context", default=None)
 
 
 def get_request_context() -> RequestContext:

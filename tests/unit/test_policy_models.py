@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from acp_core.common.types import PolicyId, PrincipalKind
+from acp_core.common.types import PolicyId
 from acp_core.policy.models import (
     PolicyCondition,
     PolicyDecision,
     PolicyEffect,
-    PolicyEvaluationInput,
     PolicyRule,
 )
 

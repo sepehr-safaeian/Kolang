@@ -12,15 +12,13 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends gcc libpq-dev && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy dependency specification first (layer caching)
+# Copy dependency specification and source code
 COPY pyproject.toml README.md ./
-
-# Install Python dependencies
-RUN pip install --no-cache-dir --prefix=/install .
-
-# Copy source code
 COPY packages/ packages/
 COPY apps/ apps/
+
+# Install Python package and dependencies
+RUN pip install --no-cache-dir --prefix=/install .
 
 # ── Stage 2: Runtime ─────────────────────────────────────────────────────────
 FROM python:3.11-slim AS runtime
@@ -59,6 +57,7 @@ USER kolang
 # Environment
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app/packages:/app \
     APP_ENV=production
 
 EXPOSE 8000

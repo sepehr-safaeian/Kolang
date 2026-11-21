@@ -76,9 +76,13 @@ class PayloadTooLargeError(KolangError):
     status_code = 413
 
 
-class TimeoutError(KolangError):
+class UpstreamTimeoutError(KolangError):
     code = "TIMEOUT"
     status_code = 504
+
+
+# Backward-compatible alias
+TimeoutError = UpstreamTimeoutError  # noqa: A001
 
 
 # ── API Error Response Model ─────────────────────────────────────────────────
