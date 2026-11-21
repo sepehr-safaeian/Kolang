@@ -14,7 +14,7 @@
 
 1. **Domain Baseline & Internal Contracts:** Core domain models are defined as Pydantic v2 schemas across `acp_core` packages (internal protocol, identity, policy, approvals, and audit events). All existing unit tests pass cleanly.
 2. **Context Propagation & Telemetry:** Request context middleware (`RequestContextMiddleware`) generates and propagates `request_id` and `correlation_id` across HTTP headers and structured `structlog` contextvars.
-3. **Official MCP SDK Dependency Missing:** The official `mcp` Python SDK is neither declared in `pyproject.toml` nor locked in `uv.lock`. Current code relies on abstract internal models and mock demo classes.
+3. **Official MCP SDK Pinned:** The official Python SDK has been pinned as `mcp==2.3.0` in `pyproject.toml` and locked in `uv.lock`. Concrete integration, wire transport adapters, and protocol compatibility validation are pending (ACP-002).
 4. **Persistence & ORM Gap:** No SQLAlchemy ORM models exist in the repository; `migrations/versions/` is empty, and the readiness check (`/readyz`) returns a hardcoded mock status with a `TODO` comment for database connectivity.
 5. **Execution Engines Pending:** Live integration with Open Policy Agent (OPA HTTP policy evaluation), Keycloak OIDC/JWT signature verification, secret encryption/credential injection, and the actual gateway Streamable HTTP forwarding loop are not yet implemented.
 6. **Frontend:** The `apps/web` directory is empty; no Next.js project or frontend package configuration has been initialized yet.
@@ -28,7 +28,7 @@ The active filesystem tree of the repository is structured as follows:
 ```text
 Kolang/
 ├── .agents/                               # Local agent rules and operational directives
-│   └── rules/                             # 11 Inviolable Laws rule modules
+│   └── rules/                             # 12 Inviolable Laws rule modules
 ├── .github/                               # CI/CD and repository workflows
 │   ├── ISSUE_TEMPLATE/                    # GitHub issue templates
 │   ├── workflows/
@@ -134,7 +134,7 @@ Kolang/
 ├── alembic.ini                            # Alembic configuration file
 ├── CODE_OF_CONDUCT.md
 ├── CONTRIBUTING.md
-├── GEMINI.md                              # Master 11 Inviolable Laws of Kolang
+├── GEMINI.md                              # Master 12 Inviolable Laws of Kolang
 ├── Kolang-Logo.svg
 ├── kolang.css                             # Semantic CSS design tokens
 ├── LICENSE                                # Apache 2.0 License
@@ -241,7 +241,7 @@ Every domain is evaluated according to the standard five status classifications:
 | **Gateway Protocol Interfaces** | `Partially Implemented` | `Protocol` interfaces (`DownstreamHandler`, `UpstreamConnector`, `PolicyEnforcer`, `ApprovalManager`) defined in `acp_core.gateway.interfaces`, but no concrete router or forwarder classes exist. |
 | **Health Check Endpoints** | `Partially Implemented` | `/healthz` is functional. `/readyz` returns a mock `"ok"` response with a `# TODO` comment for real database ping. |
 | **OPA Rego Policies** | `Partially Implemented` | Policy rules exist in `deploy/opa/kolang/authz.rego`, but no Python HTTP client for OPA evaluation is implemented. |
-| **Official MCP SDK & Wire Protocol** | `Missing` | The official `mcp` package is not declared in `pyproject.toml` or `uv.lock`. No protocol wire adapters exist. |
+| **Official MCP SDK & Wire Protocol** | `Partially Implemented` | Pinned `mcp==2.3.0` in `pyproject.toml` and `uv.lock`. Protocol wire adapters and runtime client/server integration remain pending. |
 | **Database ORM Models & Migrations** | `Missing` | No SQLAlchemy 2.0 ORM models exist; `migrations/versions/` is empty; `target_metadata` in `migrations/env.py` is `None`. |
 | **OIDC / JWT Validation Middleware** | `Missing` | Keycloak realm exists, but no FastAPI dependency or middleware validates tokens or resolves principals from JWKS. |
 | **Gateway Policy Enforcement Point** | `Missing` | No interception pipeline exists in the request path to evaluate policies against OPA before forwarding calls. |
@@ -258,7 +258,7 @@ Mapping against the 69 tasks specified in `agent-control-plane-mvp-backlog.md`:
 
 ### Group A: Architecture Baseline & Contracts (ACP-001 to ACP-005)
 * **ACP-001 (Audit Repository):** `Implemented & Tested` — Fulfilled by this audit document and verification report.
-* **ACP-002 (Pin MCP SDK & Protocol Version):** `Missing` — SDK must be selected, pinned, and documented in an ADR.
+* **ACP-002 (Pin MCP SDK & Protocol Version):** `Partially Implemented` — `mcp==2.3.0` pinned in dependencies; formal ADR and compatibility verification in progress.
 * **ACP-003 (Internal Gateway & Decision Contracts):** `Partially Implemented` — Domain schemas exist in `protocol/models.py` and `gateway/interfaces.py`, needing contract hardening.
 * **ACP-004 (Configuration & Environment):** `Implemented & Tested` — `Settings` class and `.env.example` verified.
 * **ACP-005 (Structured Logging & Request Correlation):** `Implemented & Tested` — `structlog` and `RequestContextMiddleware` verified with automated tests.
