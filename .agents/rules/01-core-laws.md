@@ -6,9 +6,9 @@
 
 ---
 
-## The 11 Inviolable Laws of Kolang
+## The 12 Inviolable Laws of Kolang
 
-Every agent and engineer working on Kolang MUST adhere to these eleven foundational laws:
+Every agent and engineer working on Kolang MUST adhere to these twelve foundational laws:
 
 ### Law 1: 4-Language Multilingual Standard (i18n)
 - **Supported Languages:**
@@ -94,3 +94,8 @@ Every agent and engineer working on Kolang MUST adhere to these eleven foundatio
   - Test automation with coverage threshold reporting.
   - Multi-arch Docker container builds (`deploy/Dockerfile`).
   - Security audits (Bandit, vulnerability scanning).
+
+### Law 12: Strict English-Default Standard for All Repository Artifacts
+- **Mandatory English:** All documentation files (`.md`), README files, code comments, docstrings, TSDoc, commit messages, PR descriptions, test names, and architecture guides must be written strictly in **English**.
+- **No Non-English Content:** Never write Persian, Farsi, or other non-English text inside repository files or code.
+- **Sole Exception:** UI translation dictionary entries for the 4 supported languages (`en`, `de`, `ru`, `zh`) stored in designated i18n localization files.

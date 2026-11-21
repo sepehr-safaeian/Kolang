@@ -1,10 +1,12 @@
 # Rule 07: Comprehensive Documentation & Testing Standards
 
-> **Mandate:** Every single function, class, endpoint, and UI component in Kolang MUST have clean documentation and automated test coverage. Zero undocumented or untested code.
+> **Mandate:** Every single function, class, endpoint, and UI component in Kolang MUST have clean documentation and automated test coverage. All documentation, comments, and docstrings must strictly be written in English (zero Persian). Zero undocumented or untested code.
 
 ---
 
-## 1. Documentation Requirements
+## 1. Documentation Requirements (English Strictly)
+
+All documentation, docstrings, code comments, and markdown documents must be authored strictly in English. No Persian or non-English text is permitted in repository files.
 
 ### 1.1 Python Code (Backend & SDK)
 - Every public function, class, method, and router must include a structured docstring (Google / Sphinx format):

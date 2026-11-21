@@ -13,9 +13,9 @@ All contributions must reflect the quality of a world-class European enterprise 
 
 ---
 
-## 2. The 11 Inviolable Laws of Kolang
+## 2. The 12 Inviolable Laws of Kolang
 
-Every task executed in this repository MUST comply with these eleven laws:
+Every task executed in this repository MUST comply with these twelve laws:
 
 ### 1. 4-Language Multilingual Standard (i18n)
 - **Languages:** English (`en` - Default), German (`de`), Russian (`ru`), Chinese Simplified (`zh`).
@@ -90,6 +90,11 @@ Every task executed in this repository MUST comply with these eleven laws:
 - Maintain automated GitHub Actions workflows for linting (Ruff), type checking (Mypy), automated tests with coverage, and multi-arch Docker container builds.
 - Keep local developer environment reproducible via `deploy/docker-compose.yml`.
 
+### 12. Strict English-Default Standard for All Repository Artifacts
+- **Mandatory English:** All code comments, docstrings, TSDoc/JSDoc, markdown documents (`.md`), READMEs, commit messages, PR descriptions, test assertions, and architectural specifications must be written strictly in **English**.
+- **No Non-English Content in Code or Docs:** Never write Persian, Farsi, or other non-English text inside repository files, comments, or documentation.
+- **Sole Exception:** UI translation dictionary entries for the 4 supported languages (`en`, `de`, `ru`, `zh`) stored in dedicated i18n locale files.
+
 ---
 
 ## 3. Modular Rule Index
@@ -103,17 +108,19 @@ For exhaustive technical specifications, consult the dedicated rule modules:
 - [Rule 06: API & MCP Dual Architecture](file:///c:/Users/Sepehr/Documents/Kolang/.agents/rules/06-api-and-mcp-dual-architecture.md)
 - [Rule 07: Documentation & Testing](file:///c:/Users/Sepehr/Documents/Kolang/.agents/rules/07-documentation-and-testing.md)
 - [Rule 08: Git & CI/CD](file:///c:/Users/Sepehr/Documents/Kolang/.agents/rules/08-git-commit-push-and-cicd.md)
+- [Rule 09: English-Default Standard](file:///c:/Users/Sepehr/Documents/Kolang/.agents/rules/09-english-default-standard.md)
 
 ---
 
 ## 4. Definition of Done (DoD) Checklist
 
 Before concluding any user request, verify:
-- [ ] 4-Language localization applied (no raw strings).
+- [ ] All code, comments, docstrings, and markdown docs written strictly in English (zero Persian).
+- [ ] 4-Language localization applied to UI dictionary (no raw strings in components).
 - [ ] Responsive across 390px, 768px, 1024px, 1440px.
 - [ ] Tested in both Light and Dark themes.
 - [ ] WCAG 2.1 AA checked (visible focus, ARIA, keyboard navigation).
 - [ ] Semantic tokens used exclusively (no hardcoded visual styles).
-- [ ] Documentation / docstrings written.
+- [ ] Documentation / docstrings written in English.
 - [ ] Automated tests written and passing cleanly.
 - [ ] Clean conventional commit created and pushed to remote repository.
