@@ -201,6 +201,7 @@ See [docs/operations/](docs/operations/) for production deployment guides.
 |-------|------|
 | Architecture | [docs/architecture/](docs/architecture/) |
 | Security Model | [docs/security/](docs/security/) |
+| Database & Migrations | [docs/development/database-migrations.md](docs/development/database-migrations.md) |
 | Operations | [docs/operations/](docs/operations/) |
 | Product | [docs/product/](docs/product/) |
 | Research | [docs/research/](docs/research/) |

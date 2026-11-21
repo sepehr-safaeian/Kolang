@@ -12,10 +12,12 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends gcc libpq-dev && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy dependency specification and source code
-COPY pyproject.toml README.md ./
+# Copy dependency specification, source code, and migration assets
+COPY pyproject.toml README.md alembic.ini ./
 COPY packages/ packages/
 COPY apps/ apps/
+COPY migrations/ migrations/
+COPY scripts/ scripts/
 
 # Install Python package and dependencies
 RUN pip install --no-cache-dir --prefix=/install .
@@ -43,9 +45,12 @@ WORKDIR /app
 # Copy installed packages from builder
 COPY --from=builder /install /usr/local
 
-# Copy application source
+# Copy application source, migrations, and runtime scripts
 COPY --from=builder /build/packages/ packages/
 COPY --from=builder /build/apps/ apps/
+COPY --from=builder /build/migrations/ migrations/
+COPY --from=builder /build/scripts/ scripts/
+COPY --from=builder /build/alembic.ini .
 COPY --from=builder /build/pyproject.toml .
 
 # Set ownership
