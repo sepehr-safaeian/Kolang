@@ -2,7 +2,7 @@
 Kolang — FastAPI application entrypoint.
 
 Configures the application with structured logging, OpenTelemetry tracing,
-CORS, request context middleware, and API routes.
+CORS, request context middleware, global safe exception handling, and API routes.
 """
 
 from __future__ import annotations
@@ -13,7 +13,12 @@ from contextlib import asynccontextmanager
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
+from acp_core.common.context import get_request_context_or_none
+from acp_core.common.errors import KolangError
+from acp_core.common.redaction import redact_data, redact_exception, redact_text
 from acp_core.common.settings import get_settings
 from acp_core.telemetry.setup import setup_telemetry
 from apps.api.app.middleware.context import RequestContextMiddleware
@@ -31,6 +36,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     setup_telemetry(settings)
     logger.info(
         "kolang.startup",
+        event_name="kolang.startup",
+        component="lifecycle",
         app_name=settings.app_name,
         environment=settings.env,
         debug=settings.app_debug,
@@ -43,7 +50,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     yield
 
     # ── Shutdown ─────────────────────────────────────────────────────────
-    logger.info("kolang.shutdown")
+    logger.info(
+        "kolang.shutdown",
+        event_name="kolang.shutdown",
+        component="lifecycle",
+    )
 
 
 def create_app() -> FastAPI:
@@ -72,6 +83,76 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     app.add_middleware(RequestContextMiddleware)
+
+    # ── Safe Exception Handlers ──────────────────────────────────────────
+    @app.exception_handler(KolangError)
+    async def handle_kolang_error(request: Request, exc: KolangError) -> JSONResponse:
+        ctx = get_request_context_or_none()
+        req_id = ctx.request_id if ctx else (exc.request_id or "")
+        corr_id = ctx.correlation_id if ctx else req_id
+
+        safe_message = redact_text(exc.message)
+        safe_details = redact_data(exc.details)
+
+        logger.error(
+            "request.error",
+            event_name="request.error",
+            component="api",
+            error_code=exc.code,
+            status_code=exc.status_code,
+            message=safe_message,
+        )
+
+        headers: dict[str, str] = {}
+        if req_id:
+            headers["X-Request-ID"] = req_id
+        if corr_id:
+            headers["X-Correlation-ID"] = corr_id
+
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "error": exc.code,
+                "message": safe_message,
+                "details": safe_details,
+                "request_id": req_id or None,
+            },
+            headers=headers,
+        )
+
+    @app.exception_handler(Exception)
+    async def handle_generic_exception(request: Request, exc: Exception) -> JSONResponse:
+        ctx = get_request_context_or_none()
+        req_id = ctx.request_id if ctx else ""
+        corr_id = ctx.correlation_id if ctx else req_id
+
+        safe_err_str = redact_exception(exc)
+
+        logger.error(
+            "request.unhandled_exception",
+            event_name="request.unhandled_exception",
+            component="api",
+            error_code="INTERNAL_ERROR",
+            status_code=500,
+            error=safe_err_str,
+        )
+
+        headers: dict[str, str] = {}
+        if req_id:
+            headers["X-Request-ID"] = req_id
+        if corr_id:
+            headers["X-Correlation-ID"] = corr_id
+
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": "INTERNAL_ERROR",
+                "message": "An internal server error occurred.",
+                "details": {},
+                "request_id": req_id or None,
+            },
+            headers=headers,
+        )
 
     # ── Routes ───────────────────────────────────────────────────────────
     app.include_router(health.router, tags=["Health"])
