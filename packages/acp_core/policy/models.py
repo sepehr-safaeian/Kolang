@@ -21,6 +21,7 @@ from acp_core.contracts.models import (
     PolicyObligation,
 )
 
+
 class PolicyCondition(BaseModel):
     """A condition attached to a CONDITIONAL policy decision."""
 
@@ -29,6 +30,7 @@ class PolicyCondition(BaseModel):
         default_factory=dict,
         description="Condition parameters, e.g. {'approvers': ['admin']}",
     )
+
 
 __all__ = [
     "PolicyCondition",

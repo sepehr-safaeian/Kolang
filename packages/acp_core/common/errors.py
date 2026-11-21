@@ -81,6 +81,13 @@ class UpstreamTimeoutError(KolangError):
     status_code = 504
 
 
+class ConfigurationError(KolangError):
+    """Raised when runtime configuration or environment variables are invalid or missing."""
+
+    code = "CONFIGURATION_ERROR"
+    status_code = 500
+
+
 # Backward-compatible alias
 TimeoutError = UpstreamTimeoutError  # noqa: A001
 

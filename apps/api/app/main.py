@@ -32,8 +32,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info(
         "kolang.startup",
         app_name=settings.app_name,
-        environment=settings.app_env,
+        environment=settings.env,
         debug=settings.app_debug,
+        log_level=settings.log_level,
+        request_timeout_seconds=settings.request_timeout_seconds,
+        max_request_body_bytes=settings.max_request_body_bytes,
+        allowed_upstream_hosts=settings.allowed_upstream_hosts,
     )
 
     yield
