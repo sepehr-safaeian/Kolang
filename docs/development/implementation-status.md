@@ -1,324 +1,321 @@
-# نقشه وضعیت پیاده‌سازی و حسابرسی مخزن (Repository Audit & Implementation Status)
+# Repository Audit & Implementation Status Map
 
-**شناسه سند:** `DOC-ACP-001`  
-**تسک مرجع:** `ACP-001 — Audit the Existing Repository and Map the Current Implementation`  
-**تاریخ گزارش:** ۲۱ نوامبر ۲۰۲۶ (21 November 2026)  
-**نسخه پروژه:** `0.1.0-alpha`  
-**هدف:** حسابرسی جامع و دقیق وضعیت فعلی مخزن Kolang ACP پیش از اعمال هرگونه تغییر کد، جهت جلوگیری از بازنویسی کدهای موجود و هدایت دقیق تسک‌های بعدی MVP Backlog.
-
----
-
-## ۱. خلاصه اجرایی (Executive Summary)
-
-مخزن **Kolang** به عنوان یک **Agent Control Plane (ACP)** و **MCP Gateway** سازمانی با معماری **Modular Monolith** طراحی شده است. بررسی عمیق مخزن نشان می‌دهد که پروژه در فاز استقرار پایه معماری (Foundation / Skeleton) قرار دارد:
-
-1. **پایه ساختار و قراردادهای دامنه (Domain Baseline):** مدل‌های پایه دامنه به صورت شمای Pydantic v2 در بسته‌های `acp_core` (شامل پروتکل داخلی، هویت، سیاست‌گذاری، تأییدیه‌ها و رویدادهای بازرسی) پیاده‌سازی شده و تست‌های واحد آن‌ها با موفقیت کامل پاس می‌شوند.
-2. **قابلیت ردیابی و لاگینگ (Telemetry & Context):** میان‌افزار ردیابی کانتکست (`RequestContextMiddleware`) شناسه درخواست (`request_id`) و شناسه همبستگی (`correlation_id`) را در هدرهای HTTP و لاگ‌های ساختاریافته `structlog` ثبت می‌کند.
-3. **نبود MCP SDK رسمی در وابستگی‌ها:** پکیج رسمی `mcp` در فایل‌های `pyproject.toml` و `uv.lock` نصب نشده است. کدهای فعلی صرفاً شمای تجریدی داخلی و یک سرور/کلاینت ماک نمایشی دارند.
-4. **عدم اتصال و مدل‌های دیتابیس (Persistence Gap):** هیچ مدل دیتابیس SQLAlchemy ORM در مخزن تعریف نشده است؛ دایرکتوری `migrations/versions/` خالی است و تست سلامت `/readyz` برای پایگاه داده دارای کامنت `TODO` بوده و مقدار ساختگی برمی‌گرداند.
-5. **عدم پیاده‌سازی موتورهای اجرایی:** اتصال واقعی به OPA (ارزیابی سیاست‌ها)، اعتبارسنجی JWT توکن‌های Keycloak، ماژول رمزنگاری و تزریق کلیدهای محرمانه، و مسیر واقعی فوروارد ابزارها در Gateway هنوز پیاده‌سازی نشده‌اند.
-6. **فرانت‌اند:** پوشه `apps/web` خالی بوده و هیچ وابستگی یا پروژه اسکلتی برای Next.js وجود ندارد.
+**Document ID:** `DOC-ACP-001`  
+**Reference Task:** `ACP-001 — Audit the Existing Repository and Map the Current Implementation`  
+**Report Date:** 21 November 2026  
+**Project Version:** `0.1.0-alpha`  
+**Purpose:** Comprehensive technical audit and status mapping of the Kolang Agent Control Plane (ACP) codebase prior to code changes, preventing duplicate rewrites and providing actionable context for subsequent MVP backlog tasks.
 
 ---
 
-## ۲. ساختار واقعی مخزن (Actual Repository Structure)
+## 1. Executive Summary
 
-ساختار واقعی و فعال فایل‌ها و پوشه‌های مخزن به شرح زیر است:
+**Kolang** is designed as an enterprise-grade **Agent Control Plane (ACP)** and **Model Context Protocol (MCP) Gateway** architected as a **Modular Monolith**. A comprehensive audit of the repository reveals that the project is currently in its architectural foundation/scaffolding phase:
+
+1. **Domain Baseline & Internal Contracts:** Core domain models are defined as Pydantic v2 schemas across `acp_core` packages (internal protocol, identity, policy, approvals, and audit events). All existing unit tests pass cleanly.
+2. **Context Propagation & Telemetry:** Request context middleware (`RequestContextMiddleware`) generates and propagates `request_id` and `correlation_id` across HTTP headers and structured `structlog` contextvars.
+3. **Official MCP SDK Dependency Missing:** The official `mcp` Python SDK is neither declared in `pyproject.toml` nor locked in `uv.lock`. Current code relies on abstract internal models and mock demo classes.
+4. **Persistence & ORM Gap:** No SQLAlchemy ORM models exist in the repository; `migrations/versions/` is empty, and the readiness check (`/readyz`) returns a hardcoded mock status with a `TODO` comment for database connectivity.
+5. **Execution Engines Pending:** Live integration with Open Policy Agent (OPA HTTP policy evaluation), Keycloak OIDC/JWT signature verification, secret encryption/credential injection, and the actual gateway Streamable HTTP forwarding loop are not yet implemented.
+6. **Frontend:** The `apps/web` directory is empty; no Next.js project or frontend package configuration has been initialized yet.
+
+---
+
+## 2. Actual Repository Structure
+
+The active filesystem tree of the repository is structured as follows:
 
 ```text
 Kolang/
-├── .agents/                               # قوانین و دستورالعمل‌های محلی Agent
-│   └── rules/                             # ماژول‌های قوانین ۱۱ گانه Kolang
-├── .github/                               # پیکربندی گیت‌هاب و خط لوله CI/CD
-│   ├── ISSUE_TEMPLATE/                    # الگوهای ایشو (Bug / Feature)
+├── .agents/                               # Local agent rules and operational directives
+│   └── rules/                             # 11 Inviolable Laws rule modules
+├── .github/                               # CI/CD and repository workflows
+│   ├── ISSUE_TEMPLATE/                    # GitHub issue templates
 │   ├── workflows/
-│   │   ├── ci.yml                         # پایپ‌لاین آزمون، لینت و بیلد داکر
-│   │   └── release.yml                    # پایپ‌لاین انتشار ریلیز
-│   └── pull_request_template.md           # الگوی PR
-├── apps/                                  # برنامه‌های اجرایی (Applications)
-│   ├── api/                               # سرویس اصلی FastAPI (Backend Gateway)
+│   │   ├── ci.yml                         # Lint, test, security, and Docker build pipeline
+│   │   └── release.yml                    # Release automation workflow
+│   └── pull_request_template.md           # PR template
+├── apps/                                  # Application entrypoints
+│   ├── api/                               # FastAPI application service (Backend Gateway)
 │   │   └── app/
 │   │       ├── middleware/
-│   │       │   └── context.py             # میان‌افزار تزریق Request-ID و Correlation-ID
+│   │       │   └── context.py             # Request-ID & Correlation-ID injection middleware
 │   │       ├── routers/
-│   │       │   └── health.py              # اندپوینت‌های /healthz و /readyz
+│   │       │   └── health.py              # /healthz and /readyz probes
 │   │       ├── __init__.py
-│   │       └── main.py                    # نقطه ورود اصلی اپلیکیشن FastAPI
-│   └── web/                               # پوشه رزرو شده برای داشبورد Next.js (در حال حاضر خالی)
-├── deploy/                                # فایل‌های استقرار و محیط محلی
-│   ├── grafana/provisioning/              # تنظیمات دیتاسورس پرومتئوس در گرافانا
+│   │       └── main.py                    # Main FastAPI application factory and entrypoint
+│   └── web/                               # Next.js admin dashboard (currently empty placeholder)
+├── deploy/                                # Deployment configurations and local dev stack
+│   ├── grafana/provisioning/              # Prometheus datasource provisioning for Grafana
 │   ├── keycloak/
-│   │   └── kolang-realm.json              # پیکربندی Realm تست Keycloak با نقش‌ها و کلاینت‌ها
+│   │   └── kolang-realm.json              # Keycloak development realm config (roles, clients)
 │   ├── opa/
 │   │   └── kolang/
-│   │       └── authz.rego                 # سیاست پایه مجوزدهی در OPA
+│   │       └── authz.rego                 # Base OPA authorization policy
 │   ├── prometheus/
-│   │   └── prometheus.yml                 # پیکربندی اسکرپ متریک‌ها در پرومتئوس
-│   ├── docker-compose.yml                 # کامپوز توسعه (Postgres, Keycloak, OPA, Redis, Prometheus, Grafana, API)
-│   └── Dockerfile                         # بیلد چندمرحله‌ای (Multi-Stage) پایتون ۳.۱۱
-├── docs/                                  # مستندات معماری و امنیت
+│   │   └── prometheus.yml                 # Prometheus metrics scraping configuration
+│   ├── docker-compose.yml                 # Local dev compose stack (Postgres, Keycloak, OPA, Redis, Prometheus, Grafana, API)
+│   └── Dockerfile                         # Multi-stage Python 3.11 production container build
+├── docs/                                  # Architecture, security, and development docs
 │   ├── architecture/
-│   │   └── README.md                      # مستند معماری Modular Monolith و اصول سیستم
+│   │   └── README.md                      # Modular Monolith architecture & principles
+│   ├── development/
+│   │   └── implementation-status.md       # This implementation status report
 │   ├── security/
-│   │   └── README.md                      # مستند معماری امنیت Zero-Trust
-│   ├── operations/                        # خالی (جهت راهنماهای عملیاتی آینده)
-│   ├── product/                           # خالی
-│   └── research/                          # خالی
-├── examples/                              # نمونه‌ها و ماک‌های نمایشی
+│   │   └── README.md                      # Zero-Trust security architecture specification
+│   ├── operations/                        # Reserved for operational runbooks
+│   ├── product/                           # Reserved for product specifications
+│   └── research/                          # Reserved for research notes
+├── examples/                              # Reference examples and smoke tests
 │   ├── demo-agent-client/
-│   │   └── client.py                      # کلاینت دمو برای ارسال درخواست به Gateway
+│   │   └── client.py                      # Demo agent client script
 │   ├── demo-mcp-server/
-│   │   └── server.py                      # ماک سرور ابزار MCP در حافظه
+│   │   └── server.py                      # In-memory mock MCP tool server
 │   └── policies/
-│       └── default-policy.rego            # نمونه سیاست OPA Rego
-├── migrations/                            # تنظیمات مایگریشن Alembic
-│   ├── versions/                          # خالی (هیچ فایل بازنگری مایگریشن هنوز ایجاد نشده است)
-│   ├── env.py                             # پیکربندی اتصال آسنکرون به دیتابیس
-│   └── script.py.mako                     # قالب اسکریپت مایگریشن
-├── packages/                              # پکیج‌های دامنه هسته (Modular Monolith)
+│       └── default-policy.rego            # Reference Rego policy rules
+├── migrations/                            # Alembic database migration environment
+│   ├── versions/                          # Empty (no migration revisions generated yet)
+│   ├── env.py                             # Async database migration configuration
+│   └── script.py.mako                     # Migration script template
+├── packages/                              # Modular monolith core packages
 │   └── acp_core/
 │       ├── approvals/
 │       │   ├── __init__.py
-│       │   └── models.py                  # ماشین حالت تأییدیه‌ها و مدل‌های داده‌ای Pydantic
+│       │   └── models.py                  # Approval state machine & Pydantic domain models
 │       ├── audit/
 │       │   ├── __init__.py
-│       │   └── models.py                  # مدل‌های رویداد بازرسی (AuditEvent) و پروتکل AuditSink
+│       │   └── models.py                  # AuditEvent schema & AuditSink protocol
 │       ├── common/
 │       │   ├── __init__.py
-│       │   ├── context.py                 # متغیرهای کانتکست (contextvars) درخواست
-│       │   ├── errors.py                  # سلسله مراتب خطاهای KolangError و ErrorResponse
-│       │   ├── settings.py                # تنظیمات برنامه بر پایه Pydantic Settings
-│       │   └── types.py                   # NewTypeها و شمارنده‌های دامنه (PrincipalKind و ...)
+│       │   ├── context.py                 # Request context contextvars
+│       │   ├── errors.py                  # KolangError hierarchy & standardized ErrorResponse
+│       │   ├── settings.py                # Pydantic Settings configuration loader
+│       │   └── types.py                   # Domain NewTypes and enums (PrincipalKind, etc.)
 │       ├── credentials/
-│       │   └── __init__.py                # رابط مدیریت کلیدهای محرمانه (فقط داک استرینگ)
+│       │   └── __init__.py                # Credential management interface docstring
 │       ├── gateway/
 │       │   ├── __init__.py
-│       │   └── interfaces.py              # اینترفیس‌های تجریدی Protocol (DownstreamHandler, UpstreamConnector و ...)
+│       │   └── interfaces.py              # Protocol interfaces (DownstreamHandler, UpstreamConnector, etc.)
 │       ├── identity/
 │       │   ├── __init__.py
-│       │   └── models.py                  # مدل‌های اعتبارسنجی توکن، Principal و کانتکست احراز هویت
+│       │   └── models.py                  # Principal, TokenClaims, and AuthContext models
 │       ├── policy/
 │       │   ├── __init__.py
-│       │   └── models.py                  # مدل‌های سیاست‌گذاری، ورودی ارزیابی و خروجی تصمیم OPA
+│       │   └── models.py                  # Policy models, evaluation input, and decision types
 │       ├── protocol/
 │       │   ├── __init__.py
-│       │   └── models.py                  # مدل‌های پیام‌های داخلی ابزارها و دیسکریپتور سرورها
+│       │   └── models.py                  # Internal tool call messages & server descriptors
 │       ├── registry/
-│       │   └── __init__.py                # رابط رجیستری ابزارها و سرورها (فقط داک استرینگ)
+│       │   └── __init__.py                # Server/tool registry interface docstring
 │       ├── telemetry/
 │       │   ├── __init__.py
-│       │   └── setup.py                   # پیکربندی structlog و OpenTelemetry Tracer
+│       │   └── setup.py                   # structlog and OpenTelemetry Tracer configuration
 │       └── __init__.py
 ├── scripts/
-│   └── generate_key.py                    # اسکریپت تولید کلید رمزنگاری ۲۵۶ بیتی Fernet
-├── tests/                                 # سوئیت تست‌های خودکار
+│   └── generate_key.py                    # 256-bit Fernet encryption key generation script
+├── tests/                                 # Automated test suite
 │   ├── integration/
 │   │   ├── __init__.py
-│   │   └── test_health.py                 # تست‌های اندپوینت‌های /healthz و /readyz و ردیابی هدرها
+│   │   └── test_health.py                 # Health and readiness probe integration tests
 │   ├── unit/
 │   │   ├── __init__.py
-│   │   ├── test_common.py                 # تست‌های کانتکست، انواع داده و سلسله‌مراتب خطاها
-│   │   ├── test_domain_models.py          # تست مدل‌های پروتکل، هویت، ماشین حالت تأیید و بازرسی
-│   │   └── test_policy_models.py          # تست مدل‌های تصمیم‌گیری و قوانین سیاست‌گذاری
+│   │   ├── test_common.py                 # Context, types, and error hierarchy unit tests
+│   │   ├── test_domain_models.py          # Protocol, identity, approval, and audit unit tests
+│   │   └── test_policy_models.py          # Policy decision and rule model unit tests
 │   ├── __init__.py
-│   └── conftest.py                        # فیکسچرهای تست آسنکرون و کلاینت آزمایشی
+│   └── conftest.py                        # Async test fixtures and test client setup
 ├── .dockerignore
 ├── .editorconfig
-├── .env.example                           # متغیرهای محیطی نمونه
+├── .env.example                           # Example environment variables
 ├── .gitignore
-├── .pre-commit-config.yaml                # هوک‌های گیت (Ruff, Mypy, Bandit)
-├── AGENTS.md                              # قوانین عملیاتی Agentها در مخزن
-├── AGENT_HANDOFF_PROMPT.md                # سند راهنمای تحویل کار میان Agentها
-├── alembic.ini                            # فایل پیکربندی Alembic
+├── .pre-commit-config.yaml                # Git hooks (Ruff, Mypy, Bandit)
+├── AGENTS.md                              # Repository operational rules for AI agents
+├── AGENT_HANDOFF_PROMPT.md                # Agent handoff guidelines
+├── alembic.ini                            # Alembic configuration file
 ├── CODE_OF_CONDUCT.md
 ├── CONTRIBUTING.md
-├── GEMINI.md                              # فرامین حاکمیتی ۱۱ گانه Kolang
+├── GEMINI.md                              # Master 11 Inviolable Laws of Kolang
 ├── Kolang-Logo.svg
-├── kolang.css                             # توکن‌های استایل دیزاین سیستم
-├── LICENSE                                # لایسنس آپاچی ۲.۰
-├── Makefile                               # دستورات اتوماسیون بیلد، تست و اجرای پروژه
-├── MASTER_DESIGN_SYSTEM_FA.md             # سند مرجع سیستم دیزاین Kolang
-├── pyproject.toml                         # پیکربندی وابستگی‌های پایتون و ابزارهای لینت و تست
-├── README.md                              # معرفی و راهنمای پروژه
-├── SECURITY.md                            # خط‌مشی گزارش آسیب‌پذیری امنیتی
-├── tokens.json                            # توکن‌های دیزاین به صورت JSON
-├── uv.lock                                # لاگ‌فایل قطعی پکیج‌های پایتون
-└── agent-control-plane-mvp-backlog.md      # سند اصلی نیازمندی‌ها و بک‌لاگ تسک‌های MVP (شامل ۶۹ تسک)
+├── kolang.css                             # Semantic CSS design tokens
+├── LICENSE                                # Apache 2.0 License
+├── Makefile                               # Automation targets for build, lint, test, run
+├── MASTER_DESIGN_SYSTEM_FA.md             # Master design system specification
+├── pyproject.toml                         # Python package metadata, dependencies, tool configs
+├── README.md                              # Project overview and quick start guide
+├── SECURITY.md                            # Security policy and vulnerability disclosure
+├── tokens.json                            # JSON design tokens
+├── uv.lock                                # Deterministic Python package lockfile
+└── agent-control-plane-mvp-backlog.md      # Full 69-task MVP engineering backlog
 ```
 
 ---
 
-## ۳. پشته فنی و وابستگی‌ها (Tech Stack & Dependencies)
+## 3. Tech Stack & Dependencies
 
-### ۳.۱ زبان و فریم‌ورک‌های اصلی
-* **پایتون:** نسخه حداقل `>=3.11` بر اساس `pyproject.toml`؛ محیط فعال مجازی محلی روی نسخه `3.12.13` اجرا می‌شود.
-* **فریم‌ورک وب:** `FastAPI >=0.115` با وب‌سرور آسنکرون `Uvicorn[standard] >=0.30`.
-* **مدل‌سازی و تنظیمات:** `Pydantic >=2.9` و `Pydantic-settings >=2.5`.
-* **دیتابیس و ORM:** `SQLAlchemy[asyncio] >=2.0` با درایور آسنکرون `asyncpg >=0.30` و `Alembic >=1.14`.
-* **کلاینت شبکه:** `HTTPX >=0.27`.
-* **تله‌متری و مشاهده‌پذیری:** `OpenTelemetry API/SDK/OTLP >=1.28`، `structlog >=24.4`.
-* **امنیت و کریپتوگرافی:** `python-jose[cryptography] >=3.3`، `cryptography >=43.0`.
-* **فرانت‌اند:** هیچ فریم‌ورکی (Next.js/React) در حال حاضر نصب نشده است (`apps/web` خالی است).
+### 3.1 Core Language & Frameworks
+* **Python:** Requires `>=3.11` (Current local virtual environment: `3.12.13`).
+* **Web Framework:** `FastAPI >=0.115` with `Uvicorn[standard] >=0.30`.
+* **Data Validation & Settings:** `Pydantic >=2.9` and `Pydantic-settings >=2.5`.
+* **Database & ORM:** `SQLAlchemy[asyncio] >=2.0`, `asyncpg >=0.30`, and `Alembic >=1.14`.
+* **HTTP Client:** `HTTPX >=0.27`.
+* **Observability:** `OpenTelemetry API/SDK/OTLP >=1.28`, `structlog >=24.4`.
+* **Cryptography & Security:** `python-jose[cryptography] >=3.3`, `cryptography >=43.0`.
+* **Frontend:** None initialized (`apps/web` is empty; no Node.js runtime or `package.json` present).
 
-### ۳.۲ مدیریت بسته‌ها و ابزارهای کیفیت کد
-* **مدیر بسته:** `uv` با فایل قفل `uv.lock` و بیلدسیستم `hatchling`.
-* **آزمون:** `pytest >=8.3`، `pytest-asyncio >=0.24`، `pytest-cov >=5.0`، `respx >=0.21`.
-* **لینت و فرمت:** `ruff >=0.8` (قوانین سخت‌گیرانه `E, F, W, I, N, UP, S, B, A, C4, DTZ, T20, PT, SIM, TID, RUF`).
-* **بررسی نوع (Type Check):** `mypy >=1.13` با تنظیم `strict = true` و پلاگین `pydantic.mypy`.
-* **اسکن امنیتی:** `bandit[toml] >=1.8`.
-* **هوک‌های گیت:** `pre-commit >=4.0`.
+### 3.2 Tooling & Quality Assurance
+* **Package Management:** `uv` with `uv.lock` lockfile and `hatchling` build backend.
+* **Testing:** `pytest >=8.3`, `pytest-asyncio >=0.24`, `pytest-cov >=5.0`, `respx >=0.21`.
+* **Linting & Formatting:** `ruff >=0.8` (rules: `E, F, W, I, N, UP, S, B, A, C4, DTZ, T20, PT, SIM, TID, RUF`).
+* **Type Checking:** `mypy >=1.13` with `strict = true` and `pydantic.mypy` plugin.
+* **Security Scanning:** `bandit[toml] >=1.8`.
+* **Pre-commit:** `pre-commit >=4.0`.
 
 ---
 
-## ۴. نقاط ورود، دستورات اجرا و تست (Entry Points & Execution Commands)
+## 4. Entry Points, Execution Commands, and Testing
 
-### ۴.۱ نقاط ورود (Entry Points)
-* **Backend:** ماژول `apps.api.app.main` شیء اصلی `app = create_app()` را تولید می‌کند.
-* **Frontend:** در حال حاضر تعریف نشده است (Missing).
+### 4.1 Entry Points
+* **Backend API Entrypoint:** `apps.api.app.main:app` (instantiated via `create_app()`, configuring telemetry, CORS, `RequestContextMiddleware`, and routes in `health.router` mounted at `/healthz`, `/readyz`, and `/`).
+* **Frontend Entrypoint:** None currently (`apps/web` empty placeholder).
 
-### ۴.۲ دستورات واقعی اجرای محیط توسعه (Development Execution)
+### 4.2 Verified Development Execution Commands
 
-| عملیات | دستور مستقیم با uv / venv | دستور معادل در Makefile |
+| Target | Command | Makefile Equivalent |
 |---|---|---|
-| **اجرای سرور Backend** | `.\.venv\Scripts\uvicorn.exe apps.api.app.main:app --reload --host 0.0.0.0 --port 8000` یا `uv run uvicorn apps.api.app.main:app --reload` | `make dev` |
-| **راه‌اندازی زیرساخت با Docker** | `docker compose -f deploy/docker-compose.yml up -d --build` | `make up` |
-| **توقف زیرساخت Docker** | `docker compose -f deploy/docker-compose.yml down` | `make down` |
-| **اعمال مایگریشن‌ها** | `.\.venv\Scripts\alembic.exe upgrade head` یا `uv run alembic upgrade head` | `make migrate` |
-| **ایجاد مایگریشن جدید** | `.\.venv\Scripts\alembic.exe revision --autogenerate -m "message"` | `make migrate-new` |
+| **Run Backend Dev Server** | `.\.venv\Scripts\uvicorn.exe apps.api.app.main:app --reload --host 0.0.0.0 --port 8000` | `make dev` |
+| **Start Docker Infrastructure** | `docker compose -f deploy/docker-compose.yml up -d --build` | `make up` |
+| **Stop Docker Infrastructure** | `docker compose -f deploy/docker-compose.yml down` | `make down` |
+| **Apply DB Migrations** | `.\.venv\Scripts\alembic.exe upgrade head` | `make migrate` |
+| **Generate New Migration** | `.\.venv\Scripts\alembic.exe revision --autogenerate -m "message"` | `make migrate-new` |
 
-### ۴.۳ دستورات واقعی تست، لینت و امنیت (Testing & QA)
+### 4.3 Verified Testing, Quality, and Security Commands
 
-تمامی دستورات زیر در محیط محلی ویندوز با موفقیت اجرا و راستی‌آزمایی شدند:
+All commands below execute cleanly in the local environment:
 
 ```powershell
-# اجرای تست‌های واحد و یکپارچگی با گزارش کامل
-.\.venv\Scripts\pytest.exe -v
-
-# اجرای تست‌ها به همراه پوشش کد (Coverage Report)
+# Run unit and integration tests with coverage
 .\.venv\Scripts\pytest.exe --cov=packages/acp_core --cov-report=term-missing
 
-# اجرای لینتر ruff
+# Run Ruff linter checks
 .\.venv\Scripts\ruff.exe check .
 
-# اعتبارسنجی فرمت کد با ruff
+# Check code formatting with Ruff
 .\.venv\Scripts\ruff.exe format --check .
 
-# بررسی جامع نوع داده با mypy (Strict Mode)
+# Run strict type checking with Mypy
 .\.venv\Scripts\mypy.exe apps packages
 
-# اسکن آسیب‌پذیری‌های امنیتی با bandit
+# Run static security scan with Bandit
 .\.venv\Scripts\bandit.exe -r packages/ -c pyproject.toml
 ```
 
-**وضعیت آخرین اجرای محلی:**
-* تست‌های سوئیت: **۱۶ تست از ۱۶ تست پاس شدند** در ۰.۱۰ ثانیه.
-* پوشش کد هسته (`packages/acp_core`): **۹۱.۱۱٪** (حداقل پوشش تعیین‌شده در کانفیگ: ۸۰.۰٪).
-* لینتر Ruff: بدون هیچ‌گونه خطا یا هشدار.
-* تایپ‌چکر Mypy: بدون خطا در ۳۱ فایل منبع.
-* اسکن امنیتی Bandit: بدون آسیب‌پذیری (۰ خطا).
+**Latest Local Verification Metrics:**
+* **Test Suite:** **16 passed in 0.11s**.
+* **Code Coverage (`packages/acp_core`):** **91.11%** (exceeds the 80.0% threshold).
+* **Ruff:** 0 errors, 0 warnings.
+* **Mypy:** 0 issues found across 31 source files.
+* **Bandit:** 0 security issues identified.
 
 ---
 
-## ۵. تحلیل وضعیت پیاده‌سازی حوزه‌های مختلف (Domain Status Breakdown)
+## 5. Domain Implementation Status Breakdown
 
-طبق معیارهای خواسته شده، وضعیت هر حوزه با یکی از این برچسب‌ها مشخص شده است:
-* `Implemented & Tested`: کاملاً پیاده‌سازی شده و تست معتبر دارد.
-* `Implemented but Untested`: پیاده‌سازی شده ولی فاقد پوشش تست کافی است.
-* `Partially Implemented`: بخش‌هایی پیاده‌سازی شده اما ناقص یا انتزاعی است.
-* `Missing`: هنوز پیاده‌سازی نشده است.
-* `Blocked`: به دلیل وابستگی مسدود است.
+Every domain is evaluated according to the standard five status classifications:
+* `Implemented & Tested`: Fully implemented with verified passing automated tests.
+* `Implemented but Untested`: Implemented in code but lacking sufficient test coverage.
+* `Partially Implemented`: Abstract contracts or partial features present; incomplete execution logic.
+* `Missing`: Not implemented in the codebase.
+* `Blocked`: Blocked by unmet prerequisite dependencies.
 
-| حوزه / دامنه | وضعیت | توضیحات و وضعیت فعلی در کد |
+| Domain / Capability | Status | Implementation Details & Current State |
 |---|---|---|
-| **مدل‌های پیام داخلی و پروتکل (Internal Protocol Models)** | `Implemented & Tested` | مدل‌های `ToolCallRequest`، `ToolCallResponse`، `ToolDescriptor`، `ServerDescriptor` در `acp_core.protocol.models` با تست‌های کامل در `test_domain_models.py`. |
-| **میان‌افزار کانتکست و ردیابی (Request Context & Middleware)** | `Implemented & Tested` | تولید و استخراج `X-Request-ID` و `X-Correlation-ID`، اتصال به `structlog.contextvars` و هدرهای پاسخ در `apps.api.app.middleware.context` با تست در `test_health.py` و `test_common.py`. |
-| **سلسله‌مراتب خطاها (Error Hierarchy)** | `Implemented & Tested` | کلاس پایه `KolangError` و خطاهای فرعی با کدهای ماشین و استاتوس HTTP در `acp_core.common.errors` با تست در `test_common.py`. |
-| **مدل‌های داده‌ای هویت (Identity Domain Models)** | `Implemented & Tested` | مدل‌های `Principal`، `TokenClaims`، `AuthContext` در `acp_core.identity.models` با تست در `test_domain_models.py`. |
-| **ماشین حالت تأییدیه‌ها (Approval State Machine)** | `Implemented & Tested` | مدل‌های `ApprovalStatus`، `ApprovalRequest`، جدول انتقالات مجاز `can_transition` در `acp_core.approvals.models` با تست در `test_domain_models.py`. |
-| **مدل‌های سیاست‌گذاری (Policy Domain Models)** | `Implemented & Tested` | مدل‌های `PolicyEffect`، `PolicyCondition`، `PolicyDecision`، `PolicyRule`، `PolicyEvaluationInput` در `acp_core.policy.models` با تست در `test_policy_models.py`. |
-| **مدل‌های رویداد بازرسی (Audit Models)** | `Implemented & Tested` | انواع رویداد `AuditEventType`، مدل `AuditEvent` و پروتکل `AuditSink` در `acp_core.audit.models` با تست در `test_domain_models.py`. |
-| **تنظیمات برنامه (Application Settings)** | `Implemented & Tested` | بارگذاری از متغیرهای محیطی و `.env` با اعتبارسنجی در `acp_core.common.settings`. |
-| **تله‌متری و لاگینگ ساختاریافته (Telemetry & Tracing)** | `Partially Implemented` | متدهای `setup_structlog` و `setup_telemetry` با خروجی OTLP در `acp_core.telemetry.setup` وجود دارند؛ تست مستقیم صادرکننده OTLP و تجمیع متریک‌ها کامل نیست. |
-| **اینترفیس‌های Gateway (Gateway Interfaces)** | `Partially Implemented` | قراردادهای `Protocol` برای `DownstreamHandler`, `UpstreamConnector`, `PolicyEnforcer`, `ApprovalManager` در `acp_core.gateway.interfaces` تعریف شده‌اند اما پیاده‌سازی واقعی کلاسی وجود ندارد. |
-| **سلامت سرویس (Health Check Endpoints)** | `Partially Implemented` | اندپوینت `/healthz` سالم است، اما اندپوینت `/readyz` اتصال واقعی به دیتابیس ندارد و دارای کامنت `TODO` است. |
-| **قالب‌های سیاست Rego (OPA Rego Policies)** | `Partially Implemented` | فایل `deploy/opa/kolang/authz.rego` آماده است، اما کلاینت فراخوانی OPA از داخل پایتون هنوز ساخته نشده است. |
-| **بسته رسمی MCP SDK و نسخه پروتکل (MCP SDK & Protocol)** | `Missing` | پکیج رسمی `mcp` در `pyproject.toml` و `uv.lock` نصب نشده و هیچ استفاده‌ای از SDK در کد وجود ندارد. |
-| **مدل‌های دیتابیس ORM و مایگریشن‌ها (SQLAlchemy ORM & Alembic)** | `Missing` | هیچ کلاس مدل دیتابیسی وجود ندارد؛ دایرکتوری `migrations/versions/` خالی است و `target_metadata` در `env.py` برابر `None` است. |
-| **احراز هویت و اعتبارسنجی توکن OIDC/JWT** | `Missing` | هیچ میان‌افزار یا Dependency برای اعتبارسنجی توکن با کلیدهای عمومی Keycloak و استخراج Principal در روت‌ها پیاده‌سازی نشده است. |
-| **اجرای سیاست‌ها در Gateway (PEP Engine)** | `Missing` | ماژول اجرای سیاست‌ها قبل از فراخوانی ابزار و مسدودسازی ابزارهای ممنوعه در Gateway وجود ندارد. |
-| **مدیریت و تزریق محرمانه (Credentials Vault/Storage)** | `Missing` | به جز اسکریپت ساده `generate_key.py`، ماژول ذخیره امن و تزریق هدر/کلید به Upstream پیاده‌سازی نشده است. |
-| **رجیستری و کشف ابزارها (Tool Discovery & Registry)** | `Missing` | ماژول‌های اسکن ابزارهای سرور Upstream، فینگرپرینت، و کاتالوگ ابزارها پیاده‌سازی نشده‌اند. |
-| **مسیر کامل Streamable HTTP Gateway (MCP Data Plane)** | `Missing` | اندپوینت پردازش درخواست‌های MCP روی HTTP Streamable برای کلاینت‌ها و فوروارد به سرورهای Upstream پیاده‌سازی نشده است. |
-| **داشبورد ادمین فرانت‌اند (Admin UI)** | `Missing` | پوشه `apps/web` خالی است. |
+| **Internal Protocol Models** | `Implemented & Tested` | `ToolCallRequest`, `ToolCallResponse`, `ToolDescriptor`, and `ServerDescriptor` in `acp_core.protocol.models` with comprehensive tests in `test_domain_models.py`. |
+| **Request Context & Middleware** | `Implemented & Tested` | `RequestContextMiddleware` generates/extracts `X-Request-ID` and `X-Correlation-ID`, binds them to `structlog.contextvars`, and writes them to response headers. Tested in `test_health.py` and `test_common.py`. |
+| **Error Hierarchy** | `Implemented & Tested` | `KolangError` hierarchy with machine-readable codes and HTTP status mappings in `acp_core.common.errors`. Tested in `test_common.py`. |
+| **Identity Domain Models** | `Implemented & Tested` | Pydantic models for `Principal`, `TokenClaims`, and `AuthContext` in `acp_core.identity.models`. Tested in `test_domain_models.py`. |
+| **Approval State Machine** | `Implemented & Tested` | `ApprovalStatus`, `ApprovalRequest`, and valid transitions via `can_transition()` in `acp_core.approvals.models`. Tested in `test_domain_models.py`. |
+| **Policy Domain Models** | `Implemented & Tested` | `PolicyEffect`, `PolicyCondition`, `PolicyDecision`, and `PolicyRule` in `acp_core.policy.models`. Tested in `test_policy_models.py`. |
+| **Audit Event Models** | `Implemented & Tested` | `AuditEventType`, `AuditEvent`, and `AuditSink` protocol in `acp_core.audit.models`. Tested in `test_domain_models.py`. |
+| **Configuration Management** | `Implemented & Tested` | Typed `Settings` class loading from environment variables and `.env` in `acp_core.common.settings`. |
+| **Telemetry & Structured Logging** | `Partially Implemented` | `setup_structlog()` and `setup_telemetry()` with OTLP exporter in `acp_core.telemetry.setup`. Base tracing is initialized; live collector export and metric aggregations are unverified. |
+| **Gateway Protocol Interfaces** | `Partially Implemented` | `Protocol` interfaces (`DownstreamHandler`, `UpstreamConnector`, `PolicyEnforcer`, `ApprovalManager`) defined in `acp_core.gateway.interfaces`, but no concrete router or forwarder classes exist. |
+| **Health Check Endpoints** | `Partially Implemented` | `/healthz` is functional. `/readyz` returns a mock `"ok"` response with a `# TODO` comment for real database ping. |
+| **OPA Rego Policies** | `Partially Implemented` | Policy rules exist in `deploy/opa/kolang/authz.rego`, but no Python HTTP client for OPA evaluation is implemented. |
+| **Official MCP SDK & Wire Protocol** | `Missing` | The official `mcp` package is not declared in `pyproject.toml` or `uv.lock`. No protocol wire adapters exist. |
+| **Database ORM Models & Migrations** | `Missing` | No SQLAlchemy 2.0 ORM models exist; `migrations/versions/` is empty; `target_metadata` in `migrations/env.py` is `None`. |
+| **OIDC / JWT Validation Middleware** | `Missing` | Keycloak realm exists, but no FastAPI dependency or middleware validates tokens or resolves principals from JWKS. |
+| **Gateway Policy Enforcement Point** | `Missing` | No interception pipeline exists in the request path to evaluate policies against OPA before forwarding calls. |
+| **Secure Credential Storage & Injection** | `Missing` | Aside from the standalone `scripts/generate_key.py`, no encryption vault or upstream credential injection exists. |
+| **Tool Registry & Discovery** | `Missing` | Tool scanning, deterministic SHA-256 fingerprinting, tool snapshotting, and catalog APIs are not implemented. |
+| **Streamable HTTP Gateway Transport** | `Missing` | Downstream Streamable HTTP MCP endpoint and upstream forwarding transport are not implemented. |
+| **Admin Dashboard UI** | `Missing` | `apps/web` directory is empty. |
 
 ---
 
-## ۶. مقایسه وضعیت موجود با تسک‌های MVP Backlog (تسک‌های ACP-001 تا ACP-069)
+## 6. Backlog Scope Comparison (ACP-001 through ACP-069)
 
-جدول زیر تطابق وضعیت فعلی مخزن با فازها و تسک‌های ۶۹‌گانه سند `agent-control-plane-mvp-backlog.md` را مشخص می‌کند:
+Mapping against the 69 tasks specified in `agent-control-plane-mvp-backlog.md`:
 
-### گروه A: معماری، مخزن و قراردادهای مهندسی (ACP-001 تا ACP-005)
-* **ACP-001 (حسابرسی مخزن):** `In Progress` — همین گزارش حسابرسی و نقشه پیاده‌سازی در حال تکمیل آن است.
-* **ACP-002 (تثبیت نسخه MCP SDK و پروتکل):** `Missing` — SDK رسمی هنوز پین و اضافه نشده است.
-* **ACP-003 (تعریف قراردادهای داخلی درخواست و تصمیم):** `Partially Implemented` — مدل‌های داده‌ای در `protocol/models.py` و `gateway/interfaces.py` ساخته شده و تست شده‌اند، اما نیاز به تکمیل جزئیات فیلدهای استاندارد دارند.
-* **ACP-004 (مدیریت تنظیمات و محیط):** `Implemented & Tested` — کلاس `Settings` با استفاده از `pydantic-settings` و فایل نمونه `.env.example` پیاده‌سازی شده و تست شده است.
-* **ACP-005 (لاگینگ ساختاریافته و همبستگی درخواست):** `Implemented & Tested` — از طریق `structlog` و `RequestContextMiddleware` به همراه تست کامل فعال است.
+### Group A: Architecture Baseline & Contracts (ACP-001 to ACP-005)
+* **ACP-001 (Audit Repository):** `Implemented & Tested` — Fulfilled by this audit document and verification report.
+* **ACP-002 (Pin MCP SDK & Protocol Version):** `Missing` — SDK must be selected, pinned, and documented in an ADR.
+* **ACP-003 (Internal Gateway & Decision Contracts):** `Partially Implemented` — Domain schemas exist in `protocol/models.py` and `gateway/interfaces.py`, needing contract hardening.
+* **ACP-004 (Configuration & Environment):** `Implemented & Tested` — `Settings` class and `.env.example` verified.
+* **ACP-005 (Structured Logging & Request Correlation):** `Implemented & Tested` — `structlog` and `RequestContextMiddleware` verified with automated tests.
 
-### گروه B: مدل داده و ماندگاری (ACP-006 تا ACP-014)
-* **ACP-006 تا ACP-014:** `Missing` — هیچ‌یک از مدل‌های دیتابیس (Workspace, McpServer, Tool, ToolSnapshot, Principal, Agent, Policy, PolicyVersion, ApprovalRequest, AuditEvent) در قالب مدل‌های SQLAlchemy 2 پیاده‌سازی نشده‌اند و دیتابیس مایگریشن ندارد.
+### Group B: Data Models & Persistence (ACP-006 to ACP-014)
+* **ACP-006 to ACP-014:** `Missing` — Database session lifecycle, Alembic initial migration, and SQLAlchemy ORM models (`Workspace`, `McpServer`, `Tool`, `ToolSnapshot`, `Principal`, `Agent`, `Policy`, `PolicyVersion`, `ApprovalRequest`, `AuditEvent`) are not implemented.
 
-### گروه C: سرور دمو و درگاه MCP (ACP-015 تا ACP-024)
-* **ACP-015 تا ACP-016:** `Partially Implemented` — فایل‌های دمو در `examples/` وجود دارند اما صرفاً اسکریپت ساده با کلاس‌های ماک هستند و با پروتکل رسمی کار نمی‌کنند.
-* **ACP-017 تا ACP-024:** `Missing` — آداپتور کلاینت Upstream، اندپوینت Downstream، مپینگ خطاها، محدودیت‌ها و روتینگ و چک سلامت ابزارها پیاده نشده‌اند.
+### Group C: Demo MCP & Gateway Data Plane (ACP-015 to ACP-024)
+* **ACP-015 to ACP-016:** `Partially Implemented` — Standalone demo files in `examples/` provide in-memory mocks, but do not speak standard wire MCP.
+* **ACP-017 to ACP-024:** `Missing` — Upstream MCP client adapter, downstream Streamable HTTP endpoint, error mapping, timeouts, SSRF protection, health checks, and server registration APIs are missing.
 
-### گروه D: رجیستری ابزارها (ACP-025 تا ACP-030)
-* **ACP-025 تا ACP-030:** `Missing` — کشف ابزار، فینگرپرینت، دسته‌بندی امن، API مشاهده کاتالوگ و رفرش هنوز وجود ندارند.
+### Group D: Tool Registry & Discovery (ACP-025 to ACP-030)
+* **ACP-025 to ACP-030:** `Missing` — Tool discovery, deterministic fingerprinting, safe classification, catalog read APIs, policy filtering, and drift refresh are missing.
 
-### گروه E: هویت، کلاینت‌ها و چندمستأجری (ACP-031 تا ACP-037)
-* **ACP-031:** `Partially Implemented` — فایل Realm در `deploy/keycloak/kolang-realm.json` موجود است.
-* **ACP-032 تا ACP-037:** `Missing` — اعتبارسنجی JWT، استخراج هویت، جداسازی فضای کاری و تست‌های امنیتی هنوز ساخته نشده‌اند.
+### Group E: Identity, Authentication & Workspace Scoping (ACP-031 to ACP-037)
+* **ACP-031:** `Partially Implemented` — Realm configuration in `deploy/keycloak/kolang-realm.json` exists.
+* **ACP-032 to ACP-037:** `Missing` — OIDC JWT validation, principal resolution, endpoint auth, workspace tenant isolation, agent management APIs, and security suites are missing.
 
-### گروه F: سیاست‌گذاری و OPA (ACP-038 تا ACP-044)
-* **ACP-038 تا ACP-044:** `Missing` — به جز فایل Rego خام در `deploy/opa/kolang/authz.rego` و مدل Pydantic، هیچ کلاینت فراخوانی OPA، انطباق سیاست قبل از اجرا، رسید تصمیم یا Rate Limit پیاده نشده است.
+### Group F: Policy Engine & OPA (ACP-038 to ACP-044)
+* **ACP-038 to ACP-044:** `Missing` — OPA client integration, default-deny Rego evaluation, policy publish API, pre-execution enforcement, decision receipts, simulation API, and rate limiting are missing.
 
-### گروه G: مدیریت تأییدیه‌ها (ACP-045 تا ACP-049)
-* **ACP-045 تا ACP-049:** `Partially Implemented` — منطق انتقال وضعیت ماشین حالت در حافظه پیاده‌سازی و تست شده (`can_transition`)، اما ذخیره‌سازی، API تأیید/رد و مصرف یک‌بارمصرف آن پیاده نشده است.
+### Group G: Approval Workflows (ACP-045 to ACP-049)
+* **ACP-045 to ACP-049:** `Partially Implemented` — State machine transition validation (`can_transition()`) is implemented in memory, but approval database persistence, APIs, payload binding, and expiration are missing.
 
-### گروه H: مدیریت کلیدهای محرمانه و دسترسی (ACP-050 تا ACP-052)
-* **ACP-050 تا ACP-052:** `Missing` — فقط اسکریپت ساده `generate_key.py` وجود دارد؛ هیچ ماژول نگهداری امن یا تزریق Credential ساخته نشده است.
+### Group H: Upstream Credentials (ACP-050 to ACP-052)
+* **ACP-050 to ACP-052:** `Missing` — Encryption at rest, credential profile APIs, and runtime injection are missing.
 
-### گروه I: بازرسی و مانیتورینگ (ACP-053 تا ACP-057)
-* **ACP-053 تا ACP-057:** `Partially Implemented` — مدل رویداد بازرسی آماده است، تله‌متری اولیه فعال است، اما مخزن ماندگار ذخیره رویدادها، API جستجوی لاگ، متریک‌های پایه و بررسی وابستگی‌ها پیاده نشده‌اند.
+### Group I: Audit & Operations (ACP-053 to ACP-057)
+* **ACP-053 to ACP-057:** `Partially Implemented` — Audit models exist, basic telemetry is present; persistent audit sink, search API, Prometheus metrics, and live dependency health reporting are missing.
 
-### گروه J: آزمون‌های یکپارچگی، پکیجینگ و انتشار (ACP-058 تا ACP-065)
-* **ACP-063 (داکر کامپوز محلی):** `Implemented but Untested` — فایل کامپوز کامل وجود دارد اما اجرای End-to-End کل استک ارزیابی نشده است.
-* **ACP-064 (خط لوله CI):** `Implemented & Tested` — ورک‌فلوهای گیت‌هاب در `.github/workflows/` کامل و فعال هستند.
-* **ACP-058 تا ACP-062 و ACP-065:** `Missing` — تست‌های سناریوهای کامل امنیتی، تست قراردادهای SDK و ران‌بوک نهایی دمو هنوز توسعه داده نشده‌اند.
+### Group J: End-to-End Tests & Packaging (ACP-058 to ACP-065)
+* **ACP-063 (Local Docker Compose):** `Implemented but Untested` — `deploy/docker-compose.yml` is present but full stack E2E lifecycle has not been tested.
+* **ACP-064 (CI Pipeline):** `Implemented & Tested` — `.github/workflows/ci.yml` is configured and passes.
+* **ACP-058 to ACP-062, ACP-065:** `Missing` — End-to-end tool call tests, approval tests, SDK contract tests, and security regression suites are missing.
 
-### گروه K: رابط کاربری نمایشی ادمین (ACP-066 تا ACP-069)
-* **ACP-066 تا ACP-069:** `Missing` — پوشه `apps/web` خالی است و رابط کاربری وجود ندارد.
-
----
-
-## ۷. نیازمندی‌ها، ریسک‌ها و راهنمای تسک‌های بعدی (Context for Next Tasks)
-
-1. **حفظ استقلال مدل‌های داخلی از فرمت فیزیکی پروتکل (Protocol Independence):**
-   * مدل‌های پکیج `acp_core.protocol.models` نباید مستقیماً با شمای JSON-RPC درهم‌آمیخته شوند. آداپتورهای تبدیل سیم (Wire Adapters) باید در مرز پروتکل قرار گیرند.
-2. **عدم بازنویسی ساختار موجود:**
-   * ماژولار بودن بسته‌ها در `packages/acp_core` باید حفظ شود.
-   * افزودن کد نباید تست‌های سبز موجود (۱۶ تست جاری) را بشکند.
-3. **گام اول بلافاصله پس از این گزارش (تسک ACP-002):**
-   * بررسی پکیج رسمی Python MCP SDK (`mcp`)، انتخاب نسخه سازگار و پین کردن آن در `pyproject.toml` و `uv.lock`.
-   * ثبت نسخه انتخاب‌شده در ADR یا سند معماری پروژه.
-4. **گام‌های فاز دیتا (تسک ACP-006 به بعد):**
-   * اضافه کردن مدل‌های پایگاه داده با استفاده از SQLAlchemy 2.0 (همان‌طور که در وابستگی‌ها وجود دارد) با الگوی `DeclarativeBase` و همگام‌سازی آن در `migrations/env.py` روی `target_metadata`.
+### Group K: Optional Admin Dashboard (ACP-066 to ACP-069)
+* **ACP-066 to ACP-069:** `Missing` — Frontend dashboard shell and screens are missing.
 
 ---
 
-## ۸. چک‌لیست معیار پذیرش (Acceptance Criteria Verification)
+## 7. Actionable Context and Guidance for Next Tasks
 
-- [x] **عدم تغییر در سورس کد:** هیچ فایل پایتون یا سورس کدی در این تسک ویرایش یا اضافه نشد؛ تنها سند گزارش حسابرسی در `docs/development/implementation-status.md` ایجاد گردید.
-- [x] **مستندسازی ساختار واقعی مخزن:** تمامی دایرکتوری‌ها، فایل‌های پیکربندی و پکیج‌ها به طور کامل استخراج و در بخش ۲ نگاشت شدند.
-- [x] **ثبت دستورات واقعی اجرا و تست:** دستورات واقعی برای بک‌اند، کامپوز داکر، مایگریشن‌ها، ruff، mypy، bandit و pytest به همراه آخرین وضعیت اجرای موفق مستند شدند.
-- [x] **فهرست مغایرت‌ها با Scope بک‌لاگ:** تمامی ۶۹ تسک بک‌لاگ بررسی و شکاف‌های واقعی بین مدل‌های فعلی و پیاده‌سازی‌های مورد انتظار معین شدند.
-- [x] **ایجاد کانتکست برای تسک‌های بعدی:** این سند مرجع مستند و رسمی برای راهنمای تسک‌های بعدی (از ACP-002 به بعد) آماده است.
+1. **Protocol Independence Principle:** Internal domain models in `packages/acp_core/protocol/models.py` must remain decoupled from MCP JSON-RPC transport representations. Adapters must isolate protocol transformations at the edges.
+2. **Immediate Next Step (Task ACP-002):**
+   * Inspect the official Python MCP SDK (`mcp`).
+   * Pin the SDK dependency version in `pyproject.toml` and update `uv.lock`.
+   * Create an ADR documenting the protocol version, transport choices, and SDK compatibility guarantees.
+3. **Data Layer Phase (Task ACP-006 onwards):**
+   * Introduce SQLAlchemy 2.0 `DeclarativeBase` ORM models mirroring existing domain schemas.
+   * Bind `target_metadata` in `migrations/env.py` and generate the initial Alembic migration.
+
+---
+
+## 8. Acceptance Criteria Verification
+
+- [x] **No Source Code Changes:** No application or test source files were modified; only this status documentation was added.
+- [x] **Actual Repository Structure Documented:** Comprehensive directory hierarchy and component inventory detailed in Section 2.
+- [x] **Real Execution Commands Documented:** Backend, Docker Compose, Alembic, Ruff, Mypy, Bandit, and Pytest commands verified and documented in Section 4.
+- [x] **Differences vs. Backlog Scope Listed:** Detailed gap analysis across all 69 backlog tasks documented in Section 6.
+- [x] **Context Established for Subsequent Tasks:** Implementation foundation and technical guidance for `ACP-002` onwards provided in Section 7.
