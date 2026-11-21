@@ -81,6 +81,38 @@ class UpstreamTimeoutError(KolangError):
     status_code = 504
 
 
+class DatabaseError(KolangError):
+    """Raised when a database operation fails."""
+
+    code = "DATABASE_ERROR"
+    status_code = 500
+
+    def __init__(
+        self,
+        message: str = "A database error occurred.",
+        *,
+        details: dict[str, Any] | None = None,
+        request_id: str | None = None,
+    ) -> None:
+        super().__init__(message, details=details, request_id=request_id)
+
+
+class DatabaseConnectionError(DatabaseError):
+    """Raised when connection to the database cannot be established."""
+
+    code = "DATABASE_CONNECTION_ERROR"
+    status_code = 503
+
+    def __init__(
+        self,
+        message: str = "Database service is currently unavailable.",
+        *,
+        details: dict[str, Any] | None = None,
+        request_id: str | None = None,
+    ) -> None:
+        super().__init__(message, details=details, request_id=request_id)
+
+
 class ConfigurationError(KolangError):
     """Raised when runtime configuration or environment variables are invalid or missing."""
 

@@ -118,6 +118,23 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("ACP_DATABASE_MAX_OVERFLOW", "DATABASE_MAX_OVERFLOW"),
         description="Maximum temporary connections above pool size.",
     )
+    database_pool_timeout: float = Field(
+        default=30.0,
+        gt=0,
+        validation_alias=AliasChoices("ACP_DATABASE_POOL_TIMEOUT", "DATABASE_POOL_TIMEOUT"),
+        description="Database connection pool checkout timeout in seconds.",
+    )
+    database_pool_recycle: int = Field(
+        default=1800,
+        ge=-1,
+        validation_alias=AliasChoices("ACP_DATABASE_POOL_RECYCLE", "DATABASE_POOL_RECYCLE"),
+        description="Database connection pool recycle interval in seconds (-1 to disable).",
+    )
+    database_echo: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("ACP_DATABASE_ECHO", "DATABASE_ECHO"),
+        description="Enable SQLAlchemy query echo logging for debugging.",
+    )
 
     # ── Identity / OIDC ───────────────────────────────────────────────────
     oidc_issuer_url: str = Field(
@@ -262,7 +279,12 @@ class Settings(BaseSettings):
         trimmed = value.strip()
         if not trimmed:
             raise ValueError("ACP_DATABASE_URL must not be empty.")
-        valid_schemes = ("postgresql://", "postgresql+asyncpg://", "postgres://")
+        valid_schemes = (
+            "postgresql://",
+            "postgresql+asyncpg://",
+            "postgres://",
+            "sqlite+aiosqlite://",
+        )
         if not any(trimmed.startswith(s) for s in valid_schemes):
             raise ValueError(
                 f"Invalid database scheme in ACP_DATABASE_URL: {trimmed}. "
@@ -351,6 +373,11 @@ class Settings(BaseSettings):
                 )
 
             # Enforce non-localhost production database
+            if not self.database_url.startswith(("postgresql://", "postgresql+asyncpg://")):
+                raise ConfigurationError(
+                    "Production requires a PostgreSQL database URL (postgresql+asyncpg://).",
+                    details={"env": self.env},
+                )
             if "localhost" in self.database_url or "127.0.0.1" in self.database_url:
                 raise ConfigurationError(
                     "Localhost ACP_DATABASE_URL is not allowed in production environment.",

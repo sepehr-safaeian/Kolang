@@ -14,6 +14,8 @@ from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from acp_core.db import ping_db
+
 logger = structlog.get_logger()
 
 router = APIRouter()
@@ -54,11 +56,10 @@ async def readiness() -> JSONResponse:
     all_ok = True
 
     # ── Database check ───────────────────────────────────────────────────
-    try:
-        # TODO: Replace with actual async database ping when DB is configured
+    db_ok = await ping_db()
+    if db_ok:
         checks["database"] = "ok"
-    except Exception:
-        logger.warning("readiness.database_check_failed", exc_info=True)
+    else:
         checks["database"] = "unavailable"
         all_ok = False
 

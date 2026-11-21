@@ -13,6 +13,7 @@ from contextlib import asynccontextmanager
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.exc import SQLAlchemyError
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
@@ -20,6 +21,7 @@ from acp_core.common.context import get_request_context_or_none
 from acp_core.common.errors import KolangError
 from acp_core.common.redaction import redact_data, redact_exception, redact_text
 from acp_core.common.settings import get_settings
+from acp_core.db import close_db, init_db, ping_db
 from acp_core.telemetry.setup import setup_telemetry
 from apps.api.app.middleware.context import RequestContextMiddleware
 from apps.api.app.routers import health
@@ -47,9 +49,26 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         allowed_upstream_hosts=settings.allowed_upstream_hosts,
     )
 
+    await init_db(settings)
+    db_healthy = await ping_db()
+    if db_healthy:
+        logger.info(
+            "database.connected",
+            event_name="database.connected",
+            component="database",
+        )
+    else:
+        logger.warning(
+            "database.unreachable",
+            event_name="database.unreachable",
+            component="database",
+            message="Database ping failed during application startup.",
+        )
+
     yield
 
     # ── Shutdown ─────────────────────────────────────────────────────────
+    await close_db()
     logger.info(
         "kolang.shutdown",
         event_name="kolang.shutdown",
@@ -115,6 +134,40 @@ def create_app() -> FastAPI:
                 "error": exc.code,
                 "message": safe_message,
                 "details": safe_details,
+                "request_id": req_id or None,
+            },
+            headers=headers,
+        )
+
+    @app.exception_handler(SQLAlchemyError)
+    async def handle_sqlalchemy_error(request: Request, exc: SQLAlchemyError) -> JSONResponse:
+        ctx = get_request_context_or_none()
+        req_id = ctx.request_id if ctx else ""
+        corr_id = ctx.correlation_id if ctx else req_id
+
+        safe_err_str = redact_exception(exc)
+
+        logger.error(
+            "request.database_error",
+            event_name="request.database_error",
+            component="database",
+            error_code="DATABASE_ERROR",
+            status_code=500,
+            error=safe_err_str,
+        )
+
+        headers: dict[str, str] = {}
+        if req_id:
+            headers["X-Request-ID"] = req_id
+        if corr_id:
+            headers["X-Correlation-ID"] = corr_id
+
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": "DATABASE_ERROR",
+                "message": "A database error occurred.",
+                "details": {},
                 "request_id": req_id or None,
             },
             headers=headers,
