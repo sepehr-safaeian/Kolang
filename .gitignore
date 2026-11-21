@@ -1,0 +1,63 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Kolang .gitignore
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ─── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# ─── Virtual Environments ────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+
+# ─── IDE / Editor ────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# ─── Testing ─────────────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# ─── Linting & Type Checking ─────────────────────────────────────────────────
+.mypy_cache/
+.ruff_cache/
+
+# ─── Environment ─────────────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ─── Node.js / Next.js (admin dashboard) ─────────────────────────────────────
+node_modules/
+apps/web/.next/
+apps/web/out/
+
+# ─── Database ────────────────────────────────────────────────────────────────
+*.db
+*.sqlite3
+
+# ─── Docker Compose persistent data ──────────────────────────────────────────
+deploy/data/
+
+# ─── Credentials & Keys ──────────────────────────────────────────────────────
+*.pem
+*.key
+!deploy/keycloak/*.json
+
+# ─── OS ──────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini

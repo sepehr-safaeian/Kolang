@@ -1,0 +1,82 @@
+{
+  "realm": "kolang",
+  "enabled": true,
+  "roles": {
+    "realm": [
+      { "name": "admin", "description": "Full administrative access" },
+      { "name": "operator", "description": "Operational management access" },
+      { "name": "developer", "description": "Developer access to tools and APIs" },
+      { "name": "viewer", "description": "Read-only access" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "kolang-api",
+      "name": "Kolang API",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "kolang-api-secret",
+      "serviceAccountsEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": false,
+      "attributes": {
+        "access.token.lifespan": "3600"
+      }
+    },
+    {
+      "clientId": "kolang-web",
+      "name": "Kolang Admin Dashboard",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://localhost:3000/*",
+        "http://localhost:8000/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3000",
+        "http://localhost:8000"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "email": "admin@kolang.dev",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Kolang",
+      "lastName": "Admin",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "changeme",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["admin"]
+    },
+    {
+      "username": "developer",
+      "email": "dev@kolang.dev",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Kolang",
+      "lastName": "Developer",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "changeme",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["developer"]
+    }
+  ]
+}

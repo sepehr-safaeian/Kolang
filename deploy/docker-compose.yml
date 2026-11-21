@@ -1,0 +1,139 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Kolang — Docker Compose (Development)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+services:
+  # ── Kolang API ───────────────────────────────────────────────────────────────
+  kolang-api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+      opa:
+        condition: service_started
+    networks:
+      - kolang-network
+    restart: unless-stopped
+
+  # ── PostgreSQL ───────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: kolang
+      POSTGRES_PASSWORD: kolang
+      POSTGRES_DB: kolang
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kolang"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kolang-network
+    restart: unless-stopped
+
+  # ── Keycloak (Identity Provider) ─────────────────────────────────────────────
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: start-dev --import-realm
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres
+      KC_DB_URL_DATABASE: kolang
+      KC_DB_USERNAME: kolang
+      KC_DB_PASSWORD: kolang
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keycloak/kolang-realm.json:/opt/keycloak/data/import/kolang-realm.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - kolang-network
+    restart: unless-stopped
+
+  # ── Open Policy Agent ────────────────────────────────────────────────────────
+  opa:
+    image: openpolicyagent/opa:0.70.0-static
+    command:
+      - run
+      - --server
+      - --addr=0.0.0.0:8181
+      - --bundle
+      - /policies
+      - --watch
+    ports:
+      - "8181:8181"
+    volumes:
+      - ./opa:/policies:ro
+    networks:
+      - kolang-network
+    restart: unless-stopped
+
+  # ── Redis ────────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kolang-network
+    restart: unless-stopped
+
+  # ── Prometheus ───────────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.55.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - kolang-network
+    restart: unless-stopped
+
+  # ── Grafana ──────────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:11.3.0
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+    networks:
+      - kolang-network
+    restart: unless-stopped
+
+# ── Networks ───────────────────────────────────────────────────────────────────
+networks:
+  kolang-network:
+    driver: bridge
+
+# ── Volumes ────────────────────────────────────────────────────────────────────
+volumes:
+  postgres-data:
+  redis-data:
+  grafana-data:
