@@ -38,7 +38,12 @@ def test_migration_revisions_tree() -> None:
 
     heads = script.get_heads()
     assert len(heads) == 1, f"Expected exactly one migration head, found {heads}"
-    assert heads[0] == "0004"
+    assert heads[0] == "0005"
+
+    rev_0005 = script.get_revision("0005")
+    assert rev_0005 is not None
+    assert rev_0005.down_revision == "0004"
+    assert "create_identity_and_agent_tables" in rev_0005.doc
 
     rev_0004 = script.get_revision("0004")
     assert rev_0004 is not None

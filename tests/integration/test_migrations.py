@@ -67,12 +67,12 @@ async def test_clean_install_and_upgrade_head(
     # Execute upgrade to head
     command.upgrade(alembic_cfg, "head")
 
-    # Verify alembic_version table exists and contains 0004 (current head)
+    # Verify alembic_version table exists and contains 0005 (current head)
     async with raw_engine.connect() as conn:
         result = await conn.execute(text("SELECT version_num FROM alembic_version"))
         rows = result.fetchall()
         assert len(rows) == 1, f"Expected 1 version row in alembic_version, found: {rows}"
-        assert rows[0][0] == "0004"
+        assert rows[0][0] == "0005"
 
 
 @pytest.mark.asyncio
@@ -101,7 +101,7 @@ async def test_downgrade_to_base_and_reupgrade(
         result = await conn.execute(text("SELECT version_num FROM alembic_version"))
         rows = result.fetchall()
         assert len(rows) == 1
-        assert rows[0][0] == "0004"
+        assert rows[0][0] == "0005"
 
 
 @pytest.mark.asyncio
