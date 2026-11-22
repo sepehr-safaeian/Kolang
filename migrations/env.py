@@ -10,6 +10,8 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+import acp_core.identity.models
+import acp_core.policy.models
 import acp_core.registry.models
 import acp_core.registry.tool_models
 import acp_core.workspaces.models  # noqa: F401

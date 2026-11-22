@@ -56,6 +56,13 @@ class ConflictError(KolangError):
     status_code = 409
 
 
+class PolicyVersionImmutableError(ConflictError):
+    """Raised when an attempt is made to mutate an immutable published policy version."""
+
+    code = "POLICY_VERSION_IMMUTABLE"
+    status_code = 409
+
+
 class RateLimitError(KolangError):
     code = "RATE_LIMIT_EXCEEDED"
     status_code = 429
