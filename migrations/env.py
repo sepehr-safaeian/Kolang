@@ -11,6 +11,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 import acp_core.registry.models
+import acp_core.registry.tool_models
 import acp_core.workspaces.models  # noqa: F401
 from acp_core.common.settings import get_settings
 from acp_core.db.base import Base
