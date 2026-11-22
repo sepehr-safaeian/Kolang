@@ -55,3 +55,21 @@ class TimestampMixin:
         onupdate=lambda: datetime.now(UTC),
         nullable=False,
     )
+
+
+class WorkspaceScopedMixin:
+    """
+    Mixin adding tenant workspace scoping to relational models.
+
+    Enforces organizational tenancy boundaries across all child entities
+    (servers, tools, policies, agents, approvals, credentials, audit events).
+    """
+
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        index=True,
+        nullable=False,
+    )
+
+
+# Backward-compatible alias
+TenantScopedMixin = WorkspaceScopedMixin

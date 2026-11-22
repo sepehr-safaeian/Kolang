@@ -12,6 +12,12 @@ from pydantic import BaseModel, Field
 
 from acp_core.contracts.models import Principal
 
+__all__ = [
+    "AuthContext",
+    "Principal",
+    "TokenClaims",
+]
+
 
 class TokenClaims(BaseModel):
     """Decoded and validated OIDC/JWT token claims."""

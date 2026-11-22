@@ -11,7 +11,14 @@ from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
-from acp_core.common.types import ApprovalId, CorrelationId, PrincipalId, RequestId, ServerId
+from acp_core.common.types import (
+    ApprovalId,
+    CorrelationId,
+    PrincipalId,
+    RequestId,
+    ServerId,
+    WorkspaceId,
+)
 
 
 class ApprovalStatus(StrEnum):
@@ -52,6 +59,7 @@ class ApprovalRequest(BaseModel):
     """A request for human approval before a tool call proceeds."""
 
     id: ApprovalId
+    workspace_id: WorkspaceId = Field(default=WorkspaceId("default"))
     request_id: RequestId
     correlation_id: CorrelationId
     principal_id: PrincipalId

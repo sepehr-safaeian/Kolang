@@ -42,6 +42,7 @@ class ToolCallRequest(BaseModel):
     principal_id: str
     server_id: str
     tool_name: str
+    workspace_id: str = "default"
     arguments: dict[str, Any] = Field(default_factory=dict)
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     metadata: dict[str, Any] = Field(default_factory=dict)
@@ -67,6 +68,7 @@ class ToolDescriptor(BaseModel):
     tool_id: str
     server_id: str
     name: str
+    workspace_id: str = "default"
     description: str = ""
     input_schema: dict[str, Any] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict)
@@ -78,6 +80,7 @@ class ServerDescriptor(BaseModel):
     server_id: str
     name: str
     endpoint: str
+    workspace_id: str = "default"
     transport: TransportType = TransportType.STREAMABLE_HTTP
     health_status: HealthStatus = HealthStatus.UNKNOWN
     tools: list[ToolDescriptor] = Field(default_factory=list)

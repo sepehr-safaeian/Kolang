@@ -24,7 +24,7 @@ from acp_core.common.settings import get_settings
 from acp_core.db import close_db, init_db, ping_db
 from acp_core.telemetry.setup import setup_telemetry
 from apps.api.app.middleware.context import RequestContextMiddleware
-from apps.api.app.routers import health
+from apps.api.app.routers import health, workspaces
 
 logger = structlog.get_logger()
 
@@ -209,6 +209,7 @@ def create_app() -> FastAPI:
 
     # ── Routes ───────────────────────────────────────────────────────────
     app.include_router(health.router, tags=["Health"])
+    app.include_router(workspaces.router)
 
     @app.get("/", tags=["Root"])
     async def root() -> dict[str, str]:

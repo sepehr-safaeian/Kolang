@@ -7,7 +7,13 @@ session factory, FastAPI dependency injection, and transaction context managers.
 
 from __future__ import annotations
 
-from acp_core.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+from acp_core.db.base import (
+    Base,
+    TenantScopedMixin,
+    TimestampMixin,
+    UUIDPrimaryKeyMixin,
+    WorkspaceScopedMixin,
+)
 from acp_core.db.session import (
     DatabaseManager,
     close_db,
@@ -24,8 +30,10 @@ from acp_core.db.session import (
 __all__ = [
     "Base",
     "DatabaseManager",
+    "TenantScopedMixin",
     "TimestampMixin",
     "UUIDPrimaryKeyMixin",
+    "WorkspaceScopedMixin",
     "close_db",
     "get_db_engine",
     "get_db_manager",

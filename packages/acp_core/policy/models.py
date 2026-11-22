@@ -14,7 +14,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from acp_core.common.types import PolicyId, PrincipalKind
+from acp_core.common.types import PolicyId, PrincipalKind, WorkspaceId
 from acp_core.contracts.models import (
     PolicyDecision,
     PolicyInput,
@@ -56,6 +56,7 @@ class PolicyRule(BaseModel):
     """A declarative access control rule."""
 
     id: PolicyId
+    workspace_id: WorkspaceId = Field(default=WorkspaceId("default"))
     name: str
     description: str = ""
     effect: PolicyEffect

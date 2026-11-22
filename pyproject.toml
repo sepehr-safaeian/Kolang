@@ -94,6 +94,7 @@ known-first-party = ["acp_core"]
 # ── mypy ──────────────────────────────────────────────────────────────────────
 [tool.mypy]
 python_version = "3.11"
+mypy_path = "packages"
 strict = true
 ignore_missing_imports = true
 plugins = ["pydantic.mypy"]

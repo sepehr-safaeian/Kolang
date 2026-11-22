@@ -35,10 +35,21 @@ class AuditEventType(StrEnum):
 
 
 class AuditEvent(BaseModel):
-    """An immutable record of a security-relevant event."""
+    """
+    An immutable record of a security-relevant event.
+
+    All tenant operations must attach a valid workspace_id. A null workspace_id
+    is reserved strictly for global system events (such as daemon startup,
+    unauthenticated edge probes, or system-wide maintenance) with explicit
+    justification logged in details.
+    """
 
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     event_type: AuditEventType
+    workspace_id: str | None = Field(
+        default=None,
+        description="Tenant workspace ID. None is reserved strictly for global audit events.",
+    )
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     request_id: str = ""
     correlation_id: str = ""
