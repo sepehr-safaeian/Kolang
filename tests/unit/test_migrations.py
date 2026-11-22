@@ -38,7 +38,12 @@ def test_migration_revisions_tree() -> None:
 
     heads = script.get_heads()
     assert len(heads) == 1, f"Expected exactly one migration head, found {heads}"
-    assert heads[0] == "0002"
+    assert heads[0] == "0003"
+
+    rev_0003 = script.get_revision("0003")
+    assert rev_0003 is not None
+    assert rev_0003.down_revision == "0002"
+    assert "create_mcp_servers_table" in rev_0003.doc
 
     rev_0002 = script.get_revision("0002")
     assert rev_0002 is not None

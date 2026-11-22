@@ -205,6 +205,13 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("ACP_ALLOWED_UPSTREAM_HOSTS", "ALLOWED_UPSTREAM_HOSTS"),
         description="Allowlist of allowed upstream hostnames or IP addresses.",
     )
+    allow_local_upstreams: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("ACP_ALLOW_LOCAL_UPSTREAMS", "ALLOW_LOCAL_UPSTREAMS"),
+        description=(
+            "Explicitly allow local/private upstream MCP servers (for local development/demo)."
+        ),
+    )
 
     # ── Cache & Telemetry ─────────────────────────────────────────────────
     redis_url: str = Field(
@@ -381,6 +388,13 @@ class Settings(BaseSettings):
             if "localhost" in self.database_url or "127.0.0.1" in self.database_url:
                 raise ConfigurationError(
                     "Localhost ACP_DATABASE_URL is not allowed in production environment.",
+                    details={"env": self.env},
+                )
+
+            # Enforce that local upstreams cannot be allowed in production
+            if self.allow_local_upstreams:
+                raise ConfigurationError(
+                    "ACP_ALLOW_LOCAL_UPSTREAMS cannot be enabled in production environment.",
                     details={"env": self.env},
                 )
 
